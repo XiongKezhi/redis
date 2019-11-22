@@ -36,7 +36,7 @@
 typedef struct listNode {
     struct listNode *prev;
     struct listNode *next;
-    void *value;
+    void *value; // 空指针，可以指向任何类型
 } listNode;
 
 typedef struct listIter {
