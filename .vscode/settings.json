@@ -1,7 +1,0 @@
-{
-  "files.associations": {
-    "*.css": "css",
-    "zmalloc.h": "c",
-    "dict.h": "c"
-  }
-}

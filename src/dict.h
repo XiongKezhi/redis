@@ -34,6 +34,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 
 #ifndef __DICT_H
 #define __DICT_H
@@ -158,7 +159,7 @@ int dictDelete(dict *d, const void *key);
 dictEntry *dictUnlink(dict *ht, const void *key);
 void dictFreeUnlinkedEntry(dict *d, dictEntry *he);
 void dictRelease(dict *d);
-dictEntry * dictFind(dict *d, const void *key);
+dictEntry *dictFind(dict *d, const void *key);
 void *dictFetchValue(dict *d, const void *key);
 int dictResize(dict *d);
 dictIterator *dictGetIterator(dict *d);

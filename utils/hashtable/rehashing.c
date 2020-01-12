@@ -1,4 +1,5 @@
-#include "redis.h"
+// #include "redis.h"
+#include "server.h"
 #include "dict.h"
 
 void _redisAssert(char *x, char *y, int l) {
@@ -6,6 +7,7 @@ void _redisAssert(char *x, char *y, int l) {
     exit(1);
 }
 
+// hash function
 unsigned int dictKeyHash(const void *keyp) {
     unsigned long key = (unsigned long)keyp;
     key = dictGenHashFunction(&key,sizeof(key));
@@ -18,14 +20,17 @@ unsigned int dictKeyHash(const void *keyp) {
     return key;
 }
 
+// 键比较
 int dictKeyCompare(void *privdata, const void *key1, const void *key2) {
     unsigned long k1 = (unsigned long)key1;
     unsigned long k2 = (unsigned long)key2;
     return k1 == k2;
 }
 
+// 测试用dictType
 dictType dictTypeTest = {
-    dictKeyHash,                   /* hash function */
+    // dictKeyHash,                   /* hash function */
+    (uint64_t(*)(const void*))dictKeyHash,                   /* hash function */
     NULL,                          /* key dup */
     NULL,                          /* val dup */
     dictKeyCompare,                /* key compare */
@@ -33,6 +38,7 @@ dictType dictTypeTest = {
     NULL                           /* val destructor */
 };
 
+// 显示hash桶使用情况
 void showBuckets(dictht ht) {
     if (ht.table == NULL) {
         printf("NULL\n");
@@ -45,6 +51,7 @@ void showBuckets(dictht ht) {
     }
 }
 
+// 显示当前两个哈希表的情况
 void show(dict *d) {
     int j;
     if (d->rehashidx != -1) {
@@ -60,6 +67,7 @@ void show(dict *d) {
     printf("\n");
 }
 
+// 
 int sortPointers(const void *a, const void *b) {
     unsigned long la, lb;
 
@@ -68,6 +76,7 @@ int sortPointers(const void *a, const void *b) {
     return la-lb;
 }
 
+// 
 void stressGetKeys(dict *d, int times, int *perfect_run, int *approx_run) {
     int j;
 

@@ -189,40 +189,42 @@ int dictRehash(dict *d, int n) {
     int empty_visits = n*10; /* Max number of empty buckets to visit. */
     if (!dictIsRehashing(d)) return 0;
 
-    while(n-- && d->ht[0].used != 0) {
+    while(n-- && d->ht[0].used != 0) { // O(n^2)
         dictEntry *de, *nextde;
 
         /* Note that rehashidx can't overflow as we are sure there are more
          * elements because ht[0].used != 0 */
-        assert(d->ht[0].size > (unsigned long)d->rehashidx);
+        assert(d->ht[0].size > (unsigned long)d->rehashidx); // used + rehashidx = size
+
+        // 跳过哈希表中的空索引
         while(d->ht[0].table[d->rehashidx] == NULL) {
             d->rehashidx++;
-            if (--empty_visits == 0) return 1;
+            if (--empty_visits == 0) return 1; // 访问次数用尽
         }
-        de = d->ht[0].table[d->rehashidx];
+        de = d->ht[0].table[d->rehashidx]; // 拿到一个非空桶
         /* Move all the keys in this bucket from the old to the new hash HT */
-        while(de) {
+        while(de) { // O(n)
             uint64_t h;
 
             nextde = de->next;
             /* Get the index in the new hash table */
-            h = dictHashKey(d, de->key) & d->ht[1].sizemask;
-            de->next = d->ht[1].table[h];
-            d->ht[1].table[h] = de;
+            h = dictHashKey(d, de->key) & d->ht[1].sizemask; // 计算新表索引
+            de->next = d->ht[1].table[h]; // 将该键值对移动到新哈希表相应桶的第一个
+            d->ht[1].table[h] = de; // 将哈希表的索引指向该键值对
             d->ht[0].used--;
             d->ht[1].used++;
             de = nextde;
-        }
-        d->ht[0].table[d->rehashidx] = NULL;
+        } // 完成该步骤后，桶中的键值对先后顺序将首尾颠倒
+        d->ht[0].table[d->rehashidx] = NULL; // 将原哈希表相应桶置为空
         d->rehashidx++;
     }
 
     /* Check if we already rehashed the whole table... */
     if (d->ht[0].used == 0) {
-        zfree(d->ht[0].table);
-        d->ht[0] = d->ht[1];
-        _dictReset(&d->ht[1]);
-        d->rehashidx = -1;
+        zfree(d->ht[0].table);  // O(n)
+        d->ht[0] = d->ht[1]; // 交换两个哈希表顺序，在未rehash时总是使用第一个表
+        _dictReset(&d->ht[1]); // O(n)
+        d->rehashidx = -1; // 设置rehash状态为非
         return 0;
     }
 
@@ -295,6 +297,7 @@ dictEntry *dictAddRaw(dict *d, void *key, dictEntry **existing)
     dictEntry *entry;
     dictht *ht;
 
+    // 均摊rehash
     if (dictIsRehashing(d)) _dictRehashStep(d);
 
     /* Get the index of the new element, or -1 if
@@ -564,14 +567,14 @@ dictEntry *dictNext(dictIterator *iter)
     while (1) {
         if (iter->entry == NULL) {
             dictht *ht = &iter->d->ht[iter->table];
-            if (iter->index == -1 && iter->table == 0) {
+            if (iter->index == -1 && iter->table == 0) { // head iter
                 if (iter->safe)
                     iter->d->iterators++;
                 else
                     iter->fingerprint = dictFingerprint(iter->d);
             }
             iter->index++;
-            if (iter->index >= (long) ht->size) {
+            if (iter->index >= (long)ht->size) {
                 if (dictIsRehashing(iter->d) && iter->table == 0) {
                     iter->table++;
                     iter->index = 0;
@@ -638,13 +641,13 @@ dictEntry *dictGetRandomKey(dict *d)
      * select a random index. */
     listlen = 0;
     orighe = he;
-    while(he) {
+    while(he) { // O(n)
         he = he->next;
         listlen++;
     }
     listele = random() % listlen;
     he = orighe;
-    while(listele--) he = he->next;
+    while(listele--) he = he->next; // O(n)
     return he;
 }
 
@@ -993,7 +996,7 @@ static long _dictKeyIndex(dict *d, const void *key, uint64_t hash, dictEntry **e
     /* Expand the hash table if needed */
     if (_dictExpandIfNeeded(d) == DICT_ERR)
         return -1;
-    for (table = 0; table <= 1; table++) {
+    for (table = 0; table <= 1; table++) {  
         idx = hash & d->ht[table].sizemask;
         /* Search if this slot does not already contain the given key */
         he = d->ht[table].table[idx];
